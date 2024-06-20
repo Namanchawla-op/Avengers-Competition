@@ -1,0 +1,55 @@
+from flask import Flask, render_template, request, redirect, url_for
+
+app = Flask(__name__)
+
+# A list to store registered participants
+participants = []
+
+# Sample coding challenge
+CHALLENGE_QUESTION = "Write a function that returns the sum of two numbers."
+CHALLENGE_FUNCTION_NAME = "sum_two_numbers"
+CHALLENGE_TEST_INPUT = (3, 5)
+CHALLENGE_TEST_OUTPUT = 8
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        team = request.form['team']
+        participants.append({'name': name, 'email': email, 'team': team})
+        return redirect(url_for('participants'))
+    return render_template('register.html')
+
+@app.route('/participants')
+def participants_view():
+    return render_template('participants.html', participants=participants)
+
+@app.route('/challenge', methods=['GET', 'POST'])
+def challenge():
+    if request.method == 'POST':
+        code = request.form['code']
+        try:
+            # Define a local dictionary to execute the user's code
+            local_dict = {}
+            exec(code, {}, local_dict)
+            # Check if the function exists and works correctly
+            if CHALLENGE_FUNCTION_NAME in local_dict:
+                func = local_dict[CHALLENGE_FUNCTION_NAME]
+                if func(*CHALLENGE_TEST_INPUT) == CHALLENGE_TEST_OUTPUT:
+                    result = "Correct! You have unlocked an Avengers level!"
+                else:
+                    result = "Incorrect output. Try again."
+            else:
+                result = "Function not found. Make sure to define the correct function."
+        except Exception as e:
+            result = f"Error: {e}"
+        return render_template('result.html', result=result)
+    return render_template('challenge.html', question=CHALLENGE_QUESTION)
+
+if __name__ == '__main__':
+    app.run(debug=True)
